@@ -2,8 +2,8 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '25.0.3'
+    compileSdkVersion 30
+    buildToolsVersion "30.0.1"
 
     packagingOptions {
         exclude 'META-INF/library_debug.kotlin_module'
@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId "jp.co.recruit.android.lightcalendarview.kotlinsample"
         minSdkVersion 15
-        targetSdkVersion 23
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
     }

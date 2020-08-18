@@ -21,7 +21,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import android.support.v4.view.ViewCompat
+import androidx.core.view.ViewCompat
 import android.text.format.DateUtils
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.Interpolator
@@ -34,6 +34,7 @@ import java.util.*
  */
 class DayView(context: Context, settings: CalendarSettings, cal: Calendar) : CellView(context, settings) {
 
+    private var accentsNotLayout: Boolean = false
     val date: Date = cal.time
     val weekDay: WeekDay = WeekDay.fromOrdinal(cal[Calendar.DAY_OF_WEEK] - 1)
     val text: String = cal.get(Calendar.DAY_OF_MONTH).toString()
@@ -98,7 +99,7 @@ class DayView(context: Context, settings: CalendarSettings, cal: Calendar) : Cel
     }
 
     /** アクセントを設定する */
-    fun setAccents(accents: Collection<Accent>) {
+    fun setAccents(accents: Collection<Accent>, invalidate: Boolean = true) {
         // map Accents to AccentWrappers
         val wrapped = accents.map { accent ->
             this.accents.find { it.accent == accent } ?: AccentWrapper(accent)
@@ -107,9 +108,10 @@ class DayView(context: Context, settings: CalendarSettings, cal: Calendar) : Cel
             clear()
             addAll(wrapped)
         }
-
-        layoutAccents()
-        animateAccents()
+        if (invalidate) {
+            layoutAccents()
+            animateAccents()
+        } else accentsNotLayout=true
     }
 
     fun setOutside():DayView {
@@ -119,7 +121,7 @@ class DayView(context: Context, settings: CalendarSettings, cal: Calendar) : Cel
     // 祝日に設定
     fun setHoliday() {
         this.isHoliday = true
-        updatePaint();
+        updatePaint()
     }
     // 各アクセントの位置を設定する
     private fun layoutAccents() {
@@ -184,7 +186,10 @@ class DayView(context: Context, settings: CalendarSettings, cal: Calendar) : Cel
         accentsCenterX = centerX
         accentsCenterY = baseY + (height - baseY) / 2f
 
-        radius = Math.min((width - paddingLeft - paddingRight) / 2f, (height - paddingTop - paddingBottom) / 2f)
+        radius = ((width - paddingLeft - paddingRight) / 2f).coerceAtMost((height - paddingTop - paddingBottom) / 2f)
+       if (accentsNotLayout) {
+           layoutAccents()
+       }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {

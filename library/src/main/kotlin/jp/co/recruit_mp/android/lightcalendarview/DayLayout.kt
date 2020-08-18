@@ -17,7 +17,7 @@
 package jp.co.recruit_mp.android.lightcalendarview
 
 import android.content.Context
-import android.support.v4.view.ViewCompat
+import androidx.core.view.ViewCompat
 import android.text.format.DateUtils
 import java.util.*
 
@@ -100,8 +100,8 @@ class DayLayout(context: Context, settings: CalendarSettings, var month: Date) :
         val cal = firstDate.clone() as Calendar
 
         // 7 x 6 マスの DayView を追加する
-        (0..rowNum - 1).forEach {
-            (0..colNum - 1).forEach {
+        (0 until rowNum).forEach { _ ->
+            (0 until colNum).forEach { _ ->
                 when (cal[Calendar.MONTH]) {
                     thisMonth -> {
                         addView(instantiateDayView(cal.clone() as Calendar))
@@ -124,7 +124,7 @@ class DayLayout(context: Context, settings: CalendarSettings, var month: Date) :
     }
 
     internal fun invalidateDayViews() {
-        childList.map { it as? DayView }.filterNotNull().forEach {
+        childList.mapNotNull { it as? DayView }.forEach {
             it.updateState()
             ViewCompat.postInvalidateOnAnimation(it)
         }

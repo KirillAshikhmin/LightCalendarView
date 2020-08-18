@@ -18,13 +18,14 @@ package jp.co.recruit_mp.android.lightcalendarview
 
 import android.content.Context
 import android.content.res.ColorStateList
-import android.support.v4.view.PagerAdapter
-import android.support.v4.view.ViewPager
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.viewpager.widget.PagerAdapter
+import androidx.viewpager.widget.ViewPager
+import jp.co.recruit_mp.android.lightcalendarview.accent.Accent
 import java.util.*
 
 /**
@@ -32,6 +33,17 @@ import java.util.*
  * Created by masayuki-recruit on 8/18/16.
  */
 class LightCalendarView(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0, defStyleRes: Int = 0) : ViewPager(context, attrs) {
+
+    val accents: MutableMap<Date, Collection<Accent>> = mutableMapOf()
+
+    fun updateAccents() {
+        (0..childCount).forEach {
+            val child = getChildAt(it)
+            val monthView = child as? MonthView
+            monthView?.accentsUpdated(accents)
+        }
+    }
+
 
     private var settings: CalendarSettings = CalendarSettings(context)
 
@@ -56,12 +68,12 @@ class LightCalendarView(context: Context, attrs: AttributeSet? = null, defStyleA
     var monthFrom: Date = CalendarKt.getInstance(settings).apply { set(Date().getFiscalYear(settings), Calendar.APRIL, 1) }.time
         set(value) {
             field = value
-            adapter.notifyDataSetChanged()
+            adapter?.notifyDataSetChanged()
         }
     var monthTo: Date = CalendarKt.getInstance(settings).apply { set(monthFrom.getFiscalYear(settings) + 1, Calendar.MARCH, 1) }.time
         set(value) {
             field = value
-            adapter.notifyDataSetChanged()
+            adapter?.notifyDataSetChanged()
         }
 
     constructor(context: Context) : this(context, null)
@@ -75,9 +87,9 @@ class LightCalendarView(context: Context, attrs: AttributeSet? = null, defStyleA
             when (attr) {
                 R.styleable.LightCalendarView_lcv_weekDayTextSize -> setWeekDayRawTextSize(a.getDimension(attr, 0f))
                 R.styleable.LightCalendarView_lcv_dayTextSize -> setDayRawTextSize(a.getDimension(attr, 0f))
-                R.styleable.LightCalendarView_lcv_textColor -> setTextColor(a.getColorStateList(attr))
-                R.styleable.LightCalendarView_lcv_selectionColor -> setSelectionColor(a.getColorStateList(attr))
-                R.styleable.LightCalendarView_lcv_accentColor -> setAccentColor(a.getColorStateList(attr))
+                R.styleable.LightCalendarView_lcv_textColor -> a.getColorStateList(attr)?.let { setTextColor(it) }
+                R.styleable.LightCalendarView_lcv_selectionColor -> a.getColorStateList(attr)?.let { setSelectionColor(it) }
+                R.styleable.LightCalendarView_lcv_accentColor -> a.getColorStateList(attr)?.let { setAccentColor(it) }
                 R.styleable.LightCalendarView_lcv_firstDayOfWeek -> setFirstDayOfWeek(a.getInt(attr, 0))
                 R.styleable.LightCalendarView_lcv_outsideTextColor -> setOutsideTextColor(a.getColor(attr, 0))
                 R.styleable.LightCalendarView_lcv_holidayTextColor -> setHolidayTextColor(a.getColor(attr, 0))
@@ -187,6 +199,7 @@ class LightCalendarView(context: Context, attrs: AttributeSet? = null, defStyleA
             setOutsideTextColorStateList(color)
         }.notifySettingsChanged()
     }
+
     /**
      * 祝日の文字色を設定する
      */
@@ -253,6 +266,7 @@ class LightCalendarView(context: Context, attrs: AttributeSet? = null, defStyleA
                 displayOutside = value
             }.notifySettingsChanged()
         }
+
     /**
      * Sets the timezone to use in LightCalendarView.
      * Set null to use TimeZone.getDefault()
@@ -272,6 +286,7 @@ class LightCalendarView(context: Context, attrs: AttributeSet? = null, defStyleA
                 fixToday = value
             }.notifySettingsChanged()
         }
+
     /**
      * Sets the locale to use in LightCalendarView.
      * Set null to use Locale.getDefault()
@@ -285,12 +300,12 @@ class LightCalendarView(context: Context, attrs: AttributeSet? = null, defStyleA
         }
 
     private inner class Adapter : PagerAdapter() {
-        override fun instantiateItem(container: ViewGroup?, position: Int): View {
-            val view = MonthView(context, settings, getDateForPosition(position)).apply {
+        override fun instantiateItem(container: ViewGroup, position: Int): Any {
+            val view = MonthView(context, settings, getDateForPosition(position), accents).apply {
                 tag = context.getString(R.string.month_view_tag_name, position)
                 onDateSelected = { date -> this@LightCalendarView.onDateSelected?.invoke(date) }
             }
-            container?.addView(view, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            container.addView(view, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
             if (position == selectedPage) {
                 onMonthSelected?.invoke(getDateForPosition(position), view)
@@ -299,12 +314,12 @@ class LightCalendarView(context: Context, attrs: AttributeSet? = null, defStyleA
             return view
         }
 
-        override fun destroyItem(container: ViewGroup?, position: Int, view: Any?) {
-            (view as? View)?.let { container?.removeView(it) }
+        override fun destroyItem(container: ViewGroup, position: Int, obj: Any) {
+            (obj as? View)?.let { container.removeView(it) }
         }
 
-        override fun isViewFromObject(view: View?, obj: Any?): Boolean = view === obj
+        override fun isViewFromObject(view: View, obj: Any): Boolean = view === obj
 
-        override fun getCount(): Int = Math.max(0, monthTo.monthsAfter(settings, monthFrom).toInt() + 1)
+        override fun getCount(): Int = 0.coerceAtLeast(monthTo.monthsAfter(settings, monthFrom).toInt() + 1)
     }
 }

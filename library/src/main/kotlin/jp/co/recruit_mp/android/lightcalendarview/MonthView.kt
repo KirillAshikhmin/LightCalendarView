@@ -26,7 +26,7 @@ import java.util.*
  * 月カレンダーを表示する {@link LinearLayout}
  * Created by masayuki-recruit on 8/19/16.
  */
-class MonthView(context: Context, settings: CalendarSettings, var month: Date) : LinearLayout(context) {
+class MonthView(context: Context, settings: CalendarSettings, var month: Date, val accents: MutableMap<Date, Collection<Accent>>) : LinearLayout(context) {
 
     internal var onDateSelected: ((date: Date) -> Unit)? = null
 
@@ -39,6 +39,7 @@ class MonthView(context: Context, settings: CalendarSettings, var month: Date) :
         addView(weekDayLayout, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         addView(dayLayout, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        accentsUpdated(accents, false)
     }
 
     fun setSelectedDate(date: Date) {
@@ -51,12 +52,28 @@ class MonthView(context: Context, settings: CalendarSettings, var month: Date) :
         }.invalidateDayViews()
     }
 
-    fun setAccents(map: Map<Date, Collection<Accent>>) {
+    fun setAccents(map: Map<Date, Collection<Accent>>, invalidate: Boolean = true) {
         map.forEach { it ->
             val (date, accents) = it
-            dayLayout.getDayView(date)?.setAccents(accents)
+            dayLayout.getDayView(date)?.setAccents(accents, invalidate)
         }
-        dayLayout.invalidateDayViews()
+        if (invalidate) dayLayout.invalidateDayViews()
+    }
+
+    fun accentsUpdated(accents: MutableMap<Date, Collection<Accent>>?=null, invalidate: Boolean = true) {
+        val now: Calendar = Calendar.getInstance()
+        now.time = month
+        val year = now.get(Calendar.YEAR)
+        val month = now.get(Calendar.MONTH)
+        val accents = accents ?: (parent as? LightCalendarView)?.accents
+        val forCurrentMonths = accents?.filter { m->
+            val cycleMonth: Calendar = Calendar.getInstance()
+            cycleMonth.time = m.key
+            return@filter cycleMonth.get(Calendar.YEAR) == year && cycleMonth.get(Calendar.MONTH) == month
+        }?.toMap()
+        forCurrentMonths?.let {
+            setAccents(forCurrentMonths, invalidate)
+        }
     }
 
     // 祝日追加

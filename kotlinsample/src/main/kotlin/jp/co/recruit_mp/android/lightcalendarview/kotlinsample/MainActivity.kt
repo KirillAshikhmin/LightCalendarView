@@ -2,8 +2,8 @@ package jp.co.recruit_mp.android.lightcalendarview.kotlinsample
 
 import android.os.Bundle
 import android.os.Handler
-import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
 import jp.co.recruit_mp.android.lightcalendarview.LightCalendarView
 import jp.co.recruit_mp.android.lightcalendarview.accent.Accent
 import jp.co.recruit_mp.android.lightcalendarview.accent.DotAccent
@@ -14,41 +14,48 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var calendarView: LightCalendarView
 
-    private val formatter = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+    private val formatter = SimpleDateFormat("MMM yyyy", Locale.getDefault())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        calendarView = findViewById(R.id.calendarView) as? LightCalendarView ?: throw IllegalStateException("calendarView not found")
+        calendarView = findViewById(R.id.calendarView) as? LightCalendarView
+                ?: throw IllegalStateException("calendarView not found")
 
         calendarView.apply {
-            monthFrom = Calendar.getInstance().apply { set(Calendar.MONTH, 0) }.time
-            monthTo = Calendar.getInstance().apply { set(Calendar.MONTH, 11) }.time
+            displayOutside = true
+            fixToday = true
+            monthFrom = Calendar.getInstance().apply { set(Calendar.YEAR, 2014); set(Calendar.MONTH, 0) }.time
+            monthTo = Calendar.getInstance().apply { add(Calendar.MONTH, 24) }.time
             monthCurrent = Calendar.getInstance().time
+
+            val r = Random(System.currentTimeMillis())
+            Handler().postDelayed({
+                val cal = Calendar.getInstance()
+                cal.set(Calendar.MONTH, 0)
+                cal.set(Calendar.DAY_OF_MONTH, 1)
+                val dates = (1..365).map {
+                    cal.apply {
+                        cal.add(Calendar.DAY_OF_MONTH, r.nextInt(4))
+                    }.time
+                }
+                val map = mutableMapOf<Date, Collection<Accent>>().apply {
+                    dates.forEach { date ->
+                        val accents = (0..r.nextInt(5)).map { DotAccent(10f, key = "${formatter.format(date)}-$it") }
+                        put(date, accents)
+                    }
+                }
+                accents.putAll(map)
+                updateAccents()
+            }, 2000)
 
             // set the calendar view callbacks
             onMonthSelected = { date, view ->
                 supportActionBar?.apply {
-                    title = formatter.format(date)
+                    title = formatter.format(date).capitalize()
                 }
 
-                // add accents to some days with 1 second delay (simulating I/O delay)
-                Handler().postDelayed({
-                    val cal = Calendar.getInstance()
-                    val dates = (1..31).filter { it % 2 == 0 }.map {
-                        cal.apply {
-                            set(view.month.year + 1900, view.month.month, it)
-                        }.time
-                    }
-                    val map = mutableMapOf<Date, Collection<Accent>>().apply {
-                        dates.forEach { date ->
-                            val accents = (0..date.date % 3).map { DotAccent(10f, key = "${formatter.format(date)}-$it") }
-                            put(date, accents)
-                        }
-                    }
-                    view.setAccents(map)
-                }, 1000)
 
                 Log.i("MainActivity", "onMonthSelected: date = $date")
             }

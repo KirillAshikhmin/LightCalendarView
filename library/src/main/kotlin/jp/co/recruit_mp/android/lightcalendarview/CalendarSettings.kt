@@ -143,7 +143,7 @@ class CalendarSettings(private val context: Context) : ObservableSettings() {
                 todayCirclePaint = initializedTodayCirclePaint()
             }
 
-        var baseTextPaint: Paint = Paint().textSize(this@DayView.textSize).color(this@DayView.textColor).typeface(Typeface.DEFAULT).isAntiAlias(true)
+        var baseTextPaint: Paint = Paint().textSize(this@DayView.textSize).color(this@DayView.textColor).typeface(Typeface.MONOSPACE).isAntiAlias(true)
             set(value) {
                 field = value
 
